@@ -115,7 +115,8 @@ struct TermiusImportView: View {
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { continue }
-            if let host = parseTermiusLink(trimmed) {
+            if let parsed = parseTermiusLink(trimmed) {
+                let host = SSHConfig.sanitizeHost(parsed)
                 configService.addHost(host)
                 importedAliases.append(host.host)
                 count += 1
@@ -146,9 +147,10 @@ struct TermiusImportView: View {
         var params: [String: String] = [:]
         for pair in fragment.components(separatedBy: "&") {
             let kv = pair.components(separatedBy: "=")
-            guard kv.count == 2 else { continue }
+            guard kv.count >= 2 else { continue }
             let key = kv[0].removingPercentEncoding ?? kv[0]
-            let value = kv[1].removingPercentEncoding ?? kv[1]
+            let rawValue = kv[1...].joined(separator: "=")
+            let value = rawValue.removingPercentEncoding ?? rawValue
             params[key.lowercased()] = value
         }
 
